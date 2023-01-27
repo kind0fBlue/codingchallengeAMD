@@ -1,0 +1,168 @@
+const solveAdd = (exp) => {
+  // resolve add
+  let n1 = "",
+    n2 = "",
+    op = "";
+  while (exp.length > 0) {
+    const c = exp.pop();
+    if (c >= "0" && c <= "9") {
+      n1 += c;
+    } else if (n1.length > 0) {
+      op = c;
+      while (
+        exp.length > 0 &&
+        "0" <= exp[exp.length - 1] &&
+        exp[exp.length - 1] <= "9"
+      ) {
+        n2 += exp.pop();
+      }
+
+      if (op === "+") {
+        let result = String(parseInt(n1) + parseInt(n2));
+
+        for (char of result.split("").reverse()) {
+          exp.push(char);
+        }
+      } else if (op === "-") {
+        let result = String(parseInt(n1) - parseInt(n2));
+
+        for (char of result.split("").reverse()) {
+          exp.push(char);
+        }
+      }
+
+      n1 = n2 = op = "";
+    }
+  }
+
+  if (n1.length > 0) {
+    for (char of n1) exp.push(char);
+  }
+
+  return exp;
+};
+
+const solveMultiply = (expr) => {
+  // resolve multiplication
+  const dst = [];
+  let n1 = "",
+    n2 = "",
+    op = "";
+  while (expr.length > 0) {
+    if ("0" <= expr[expr.length - 1] && expr[expr.length - 1] <= "9") {
+      n1 += expr.pop();
+    } else if (expr[expr.length - 1] === "*" || expr[expr.length - 1] === "/") {
+      op = expr.pop();
+
+      while (
+        expr &&
+        "0" <= expr[expr.length - 1] &&
+        expr[expr.length - 1] <= "9"
+      ) {
+        n2 += expr.pop();
+      }
+
+      if (!n1.length) {
+        while (
+          dst.length > 0 &&
+          dst[dst.length - 1] >= "0" &&
+          dst[dst.length - 1] <= "9"
+        ) {
+          n1 += dst.pop();
+        }
+        n1 = n1.split("").reverse().join("");
+      }
+
+      if (op === "*") {
+        for (char of String(parseInt(n1) * parseInt(n2))) {
+          dst.push(char);
+        }
+      } else if (op == "/") {
+        for (char of String(Math.floor(parseInt(n1) / parseInt(n2)))) {
+          dst.push(char);
+        }
+      }
+
+      n1 = n2 = op = "";
+    } else if (expr[expr.length - 1] === "+" || expr[expr.length - 1] === "-") {
+      op = expr.pop();
+
+      if (n1.length > 0) {
+        for (char of n1) dst.push(char);
+
+        dst.push(op);
+      } else {
+        dst.push(op);
+
+        while (
+          expr.length > 0 &&
+          "0" <= expr[expr.length - 1] &&
+          expr[expr.length - 1] <= "9"
+        ) {
+          n2 += expr.pop();
+        }
+
+        for (char of n2) dst.push(char);
+      }
+
+      n1 = n2 = op = "";
+    }
+  }
+
+  if (n1.length > 0) {
+    // dd tail operand to stack
+    for (char of n1) dst.push(char);
+  }
+
+  return dst;
+};
+
+const solveSimple = (exp) => {
+  const multiplied = solveMultiply(exp);
+  multiplied.reverse();
+  const added = solveAdd(multiplied);
+  // join digits and return integer
+  return parseInt(added.join(""));
+};
+
+const calculate = (expr) => {
+  const complex = expr.split("").reverse();
+
+  const stack = [];
+
+  for (let i = 0; i < complex.length; i++) {
+    if (complex[i] !== "(") {
+      if (complex[i] !== " ") stack.push(complex[i]);
+    } else {
+      const simple = [];
+
+      while (stack.length > 0) {
+        const c = stack.pop();
+        if (c === ")") {
+          break;
+        } else {
+          simple.push(c);
+        }
+      }
+
+      let solved = solveSimple(simple);
+
+      for (char of String(Math.abs(solved)).split("").reverse()) {
+        stack.push(char);
+      }
+
+      if (solved < 0) stack.append("-");
+    }
+  }
+
+  return solveSimple(stack);
+};
+
+
+
+if (process.argv.length < 3) {
+  console.log("Pass an expression as a first argument to calculate.");
+} else {
+  const arg = process.argv[2];
+  console.log(calculate(arg));
+}
